@@ -133,7 +133,213 @@ flowchart TD
 ```
 
 ---
+## 🔹 5. Flowchart kombinasi pajak beacukai dengan pelindo 
+```mermaid
+flowchart TD
 
+    %% Start
+    A[Importir atau Forwarder] --> B[Input Dokumen dan Data Kontainer]
+
+    %% Bea Cukai
+    subgraph BeaCukai[Proses Bea Cukai]
+        B --> C[Hitung CIF = FOB + Freight + Insurance]
+        C --> D[Hitung Bea Masuk = CIF kali Tarif Bea Masuk]
+        D --> E[Hitung DPP = CIF + Bea Masuk]
+        E --> F[Hitung PPN = DPP kali 11 persen]
+        F --> G[Hitung PPh22 = DPP kali 2.5 persen dengan NPWP\natau DPP kali 7.5 persen tanpa NPWP]
+        G --> H[Total Pajak Impor = Bea Masuk + PPN + PPh22]
+        H --> I[Landed Cost = CIF + Total Pajak + Clearance + Trucking + Storage]
+        I --> J[Verifikasi Dokumen PIB]
+        J --> K{Hasil Jalur Pemeriksaan}
+        K -->|Hijau| L1[SPPB Terbit Otomatis]
+        K -->|Kuning| L2[Pemeriksaan Dokumen Tambahan lalu SPPB]
+        K -->|Merah| L3[Pemeriksaan Fisik Barang lalu SPPB]
+    end
+
+    %% Sinkronisasi
+    L1 --> M[Status SPPB Diterbitkan]
+    L2 --> M
+    L3 --> M
+
+    %% Pelindo
+    subgraph Pelindo[Proses Pelindo]
+        M --> N[Permohonan Layanan Pelabuhan]
+        N --> O[Biaya Pelindo = Stevedoring + Cargodoring + Delivery + Storage kali Hari]
+        O --> P[Validasi Gate dengan OCR atau Barcode]
+        P --> Q{Dokumen Clear}
+        Q -->|Ya| R[Gate Pass Digital Terbit dan Palang Gate Terbuka]
+        Q -->|Tidak| S[Ditahan di Gate untuk Pemeriksaan Ulang]
+    end
+
+    %% End
+    R --> T[Barang Keluar Pelabuhan]
+    S --> N
+
+    %% Styling
+    classDef green fill:#dff5e8,stroke:#1e9e55,color:#000;
+    classDef yellow fill:#fff3d6,stroke:#e69500,color:#000;
+    classDef red fill:#fbe3e4,stroke:#d43f3a,color:#000;
+    class L1 green;
+    class L2 yellow;
+    class L3 red;
+```
+---
+Konsep penyatuan alurnya:
+
+Input Data Awal
+
+Importir/forwarder hanya sekali input data (PIB, invoice, CIF, HS Code, detail kontainer).
+
+Data masuk ke sistem terpusat.
+
+Proses Bea Cukai
+
+Sistem menghitung pajak impor (pakai rumus CIF → Bea → PPN → PPh22 → Total).
+
+Dokumen diperiksa (jalur hijau, kuning, merah).
+
+Status SPPB otomatis diterbitkan jika lolos.
+
+Sinkronisasi ke Pelindo
+
+Begitu status SPPB keluar, sistem otomatis update ke dashboard Pelindo.
+
+Operator Pelindo langsung tahu kontainer ini sudah clear customs.
+
+Proses Pelindo
+
+Pelindo menjalankan layanan kepelabuhanan: stevedoring, terminal handling, storage, trucking.
+
+Tagihan jasa langsung terhubung ke dashboard yang sama.
+
+Gate Pass Digital
+
+Sistem membuat barcode/QR untuk gate pass.
+
+Validasi OCR/barcode dilakukan di gate → jika status customs & pelabuhan clear, palang terbuka.
+
+👉 Dengan begitu, importir hanya akses satu platform dan tidak perlu input berulang.
+
+2. Apakah Ada Rumus Khusus di Pelindo?
+
+Pelindo tidak punya rumus perpajakan (itu ranah Bea Cukai).
+Pelindo punya perhitungan tarif jasa → sifatnya biaya pelayanan, bukan pajak.
+
+Beberapa contoh komponen biaya Pelindo:
+
+Stevedoring = biaya bongkar muat per kontainer.
+
+Cargodoring = biaya pemindahan barang dari dermaga ke lapangan.
+
+Receiving/Delivery = biaya penerimaan & pengiriman kontainer.
+
+Storage = biaya penumpukan (biasanya gratis X hari, setelah itu kena tarif per hari per TEU).
+
+Administrasi & lain-lain = misalnya pemeriksaan, jasa tambahan (fumigasi, keamanan).
+
+📌 Rumus sederhananya lebih ke:
+
+Total Biaya Pelindo = (Stevedoring + Cargodoring + Receiving/Delivery) 
+                    + (Storage × Lama Hari × Tarif Per Hari) 
+                    + Biaya Tambahan (jika ada)
+
+3. Konsep Mudah Dipahami untuk Umum
+
+Kalau untuk orang awam, bisa dipahami begini:
+
+Bea Cukai itu seperti pajak negara: bayar dulu biar barang boleh masuk.
+
+Pelindo itu seperti biaya parkir & jasa pelabuhan: bayar karena pakai dermaga, gudang, dan alat pelabuhan.
+
+Sistem gabungan:
+
+Bayangkan tol + parkir dalam satu aplikasi e-toll.
+
+Begitu bayar tol (pajak impor clear), sistem otomatis tahu kamu boleh parkir (Pelindo bisa layani barangmu).
+
+Semua dalam satu dashboard → lebih cepat, lebih jelas, dan transparan.
+
+⚡ Jadi ringkasnya:
+
+Penyatuan alur: cukup dengan integrasi status Bea Cukai (SPPB) → jadi trigger untuk Pelindo.
+
+Rumus Pelindo: tarif layanan (storage, stevedoring, cargodoring), bukan pajak.
+
+Konsep awam: Bea Cukai = pajak, Pelindo = biaya jasa, disatukan agar proses ekspor-impor sekali jalan tanpa bolak-balik.
+
+# Referensi Bea Cukai
+
+Rumus-rumus pajak impor yang ada di flowchart tadi saya ambil dari sumber resmi yang relevan, salah satunya:
+
+Artikel Uniair Cargo: Cara Menghitung Bea Masuk dan Pajak Impor 
+
+pajak
+
+Rumus yang dipakai Bea Cukai RI (sesuai PMK No. 34/PMK.010/2017 tentang PPN dan PPh Pasal 22 Impor):
+
+CIF = FOB + Freight + Insurance
+
+Bea Masuk = CIF × Tarif Bea Masuk (HS Code)
+
+DPP = CIF + Bea Masuk
+
+PPN = DPP × 11%
+
+PPh 22 = DPP × 2,5% (punya NPWP) atau 7,5% (tidak punya NPWP)
+
+Total Pajak = Bea Masuk + PPN + PPh22
+
+Landed Cost = CIF + Pajak + biaya lain (clearance, trucking, storage)
+
+👉 Jadi, untuk sisi Bea Cukai, rumus dan alurnya valid dan sesuai aturan resmi.
+
+📌 2. Referensi Pelindo
+
+Untuk alur Pelindo, rumusnya bukan pajak tapi biaya layanan kepelabuhanan, dan sifatnya memang tarif jasa.
+Sumber rujukan:
+
+Website Pelindo (Pelindo IV, Pelindo Multi Terminal, dll) tentang struktur tarif jasa kepelabuhanan.
+
+Laporan BUMN dan dokumen tarif resmi Pelindo (misalnya Keputusan Direksi tentang Tarif Jasa Terminal).
+
+Komponen utama yang selalu muncul:
+
+Stevedoring = bongkar muat dari kapal ke dermaga.
+
+Cargodoring = pemindahan dari dermaga ke lapangan penumpukan.
+
+Receiving/Delivery = penerimaan dan pengiriman ke/dari terminal.
+
+Storage = biaya penumpukan kontainer (biasanya gratis 3 hari, selebihnya kena tarif per TEU per hari).
+
+Rumus sederhananya (hasil penyederhanaan):
+
+Total Biaya Pelindo = Stevedoring + Cargodoring + Receiving/Delivery 
+                    + (Storage × Lama Hari) 
+                    + Biaya Tambahan (jika ada)
+
+
+👉 Tarif persisnya berbeda tiap pelabuhan (Pelindo I–IV) dan tiap terminal, serta diatur lewat Peraturan Menteri Perhubungan dan SK Direksi Pelindo.
+Jadi di flowchart, saya pakai bentuk konsep umum yang valid di lapangan, tapi angkanya bisa berbeda di tiap pelabuhan.
+
+📌 3. Apakah Valid di Lapangan?
+
+Bea Cukai → Ya, valid karena mengacu aturan pemerintah (PMK) & praktik umum importasi.
+
+Pelindo → Ya, valid secara konsep karena memang begitu alurnya (kapal → bongkar muat → storage → gate).
+
+Yang berbeda hanyalah tarif detail antar lokasi (Tanjung Priok, Tanjung Perak, Belawan, dll).
+
+Tapi rumus hitungan biaya layanan = struktur baku di seluruh pelabuhan Pelindo.
+
+📌 4. Penyatuan Alur
+
+Di dunia nyata, sistem Bea Cukai (CEISA/DJBC) sudah terpisah dari sistem Pelindo (Inaportnet / Terminal Operating System).
+Namun, bisa diintegrasikan dengan API atau integrasi data → misalnya:
+
+Begitu Bea Cukai terbitkan SPPB, sistem Pelindo langsung update → kontainer bisa keluar lewat gate.
+
+Jadi flowchart gabungan yang kita buat itu masuk akal dan realistis, meski implementasinya perlu koordinasi antar lembaga.
 ## 📌 Kesimpulan
 
 - Sistem otomatisasi ini menggabungkan **perhitungan pajak impor** dengan **alur clearance Bea Cukai**.  
